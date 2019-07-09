@@ -1,0 +1,7 @@
+port: ${PORT}
+storage: 
+  driver: mongodb
+  connection: ${DB_CONNECTION}
+  name: ${DB_NAME}
+sessions:
+  key: ${SESSIONS_KEY}
