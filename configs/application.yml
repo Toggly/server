@@ -1,4 +1,5 @@
 port: ${PORT}
+multiUser: false
 storage: 
   driver: mongodb
   connection: ${DB_CONNECTION}

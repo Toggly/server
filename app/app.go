@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"bitbucket.org/toggly/toggly-server/models"
+	"bitbucket.org/toggly/toggly-server/service"
+	"bitbucket.org/toggly/toggly-server/storage"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	dbStore "github.com/nodely/go-mongo-store"
@@ -55,6 +57,12 @@ func (t *Toggly) Router(basePath string) chi.Router {
 	router.Use(middleware.Timeout(60 * time.Second))
 	router.Use(middleware.Heartbeat("/ping"))
 	router.Use(middleware.RequestLogger(&utils.StructuredLogger{Logger: t.Logger, R: nil}))
+	if t.Config.MultiUserMode {
+		router.Use(OwnerCtx(""))
+	} else {
+		t.Logger.Info("Single user mode is enabled")
+		router.Use(OwnerCtx("NO_OWNER_ID_MODE"))
+	}
 	router.Route(basePath, t.versions)
 	return router
 }
@@ -72,5 +80,13 @@ func (t *Toggly) v1(router chi.Router) {
 		Ctx:    t.Ctx,
 		Config: t.Config,
 		Logger: t.Logger,
+		Service: &service.Project{
+			Storage: &storage.MongoStorage{
+				Dbs: t.Dbs,
+			},
+			Ctx:    t.Ctx,
+			Config: t.Config,
+			Logger: t.Logger,
+		},
 	}).Routes())
 }

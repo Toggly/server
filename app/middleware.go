@@ -9,45 +9,49 @@ import (
 	"gopkg.in/toggly/go-utils.v2"
 )
 
-// CtxValue type
-type CtxValue int
-
-// CtxValue enum
-const (
-	CtxAPIVersion CtxValue = iota
-	CtxValueOwner
-	CtxValueRequestID
-	CtxValueAuth
-)
-
 // Headers
 const (
 	XTogglyOwnerID string = "X-Toggly-Owner-Id"
+	XTogglyEnvID   string = "X-Toggly-Environment"
 )
 
-// OwnerFromContext returns context value for project owner
-func OwnerFromContext(r *http.Request) string {
-	owner := r.Context().Value(CtxValueOwner)
-	return owner.(string)
-}
-
 // OwnerCtx adds auth data to context
-func OwnerCtx() func(http.Handler) http.Handler {
+func OwnerCtx(defaultOwnerID string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			log := GetLogger(r)
 			owner := r.Header.Get(http.CanonicalHeaderKey(XTogglyOwnerID))
+			if owner == "" && defaultOwnerID != "" {
+				owner = defaultOwnerID
+			}
 			if owner == "" {
 				log.Error("Header X-Toggly-Owner-Id missed")
-				NotFoundResponse(w, r, "Owner not found")
+				models.NotFoundResponse(w, r, "Owner not found")
 				return
 			}
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, CtxValueOwner, owner)
+			ctx = context.WithValue(ctx, models.CtxValueOwner, owner)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 		return http.HandlerFunc(fn)
 	}
+}
+
+// EnvironmentCtx adds auth data to context
+func EnvironmentCtx(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		log := GetLogger(r)
+		env := r.Header.Get(http.CanonicalHeaderKey(XTogglyEnvID))
+		if env == "" {
+			log.Error("Environemnt context is missed")
+			models.ForbiddenResponse(w, r, "Unable to determine environment")
+			return
+		}
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, models.CtxValueEnvID, env)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+	return http.HandlerFunc(fn)
 }
 
 // GetLogger gets logger instance from context

@@ -1,10 +1,13 @@
 package models
 
+import "net/http"
+
 // Config struct
 type Config struct {
-	Port     int               `yaml:"port"`
-	Storage  *Storage          `yaml:"storage"`
-	Sessions map[string]string `yaml:"sessions"`
+	Port          int               `yaml:"port"`
+	Storage       *Storage          `yaml:"storage"`
+	Sessions      map[string]string `yaml:"sessions"`
+	MultiUserMode bool              `yaml:"multiUser"`
 }
 
 // Storage struct
@@ -26,3 +29,16 @@ const (
 	//XRequestID key
 	XRequestID = "X-Request-Id"
 )
+
+const (
+	CtxAPIVersion contextKey = iota
+	CtxValueOwner
+	CtxValueEnvID
+	CtxValueAuth
+)
+
+// OwnerFromContext returns context value for project owner
+func OwnerFromContext(r *http.Request) string {
+	owner := r.Context().Value(CtxValueOwner)
+	return owner.(string)
+}
