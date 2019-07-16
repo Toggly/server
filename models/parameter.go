@@ -12,8 +12,8 @@ const (
 // Parameter type
 type Parameter struct {
 	ID            primitive.ObjectID `json:"-" bson:"_id,omitempty"`
+	ProjectID     primitive.ObjectID `json:"-" bson:"project_id"`
 	Code          string             `json:"code"`
-	Project       primitive.ObjectID `json:"-" bson:"project_id"`
 	Description   string             `json:"description"`
 	Type          string             `json:"type"`
 	Value         interface{}        `json:"value"`

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"bitbucket.org/toggly/toggly-server/models"
 	"bitbucket.org/toggly/toggly-server/service"
@@ -15,8 +14,8 @@ import (
 	"github.com/op/go-logging"
 )
 
-// ProjectEndpoints API struct
-type ProjectEndpoints struct {
+// EnvEndpoints API struct
+type EnvEndpoints struct {
 	Dbs      *dbStore.DbStorage
 	Ctx      context.Context
 	Config   *models.Config
@@ -25,32 +24,41 @@ type ProjectEndpoints struct {
 }
 
 // Routes returns api endpoints
-func (a *ProjectEndpoints) Routes() chi.Router {
+func (a *EnvEndpoints) Routes() chi.Router {
 	router := chi.NewRouter()
 	router.Group(func(group chi.Router) {
+		group.Use(WithProjectCtx(a.Services["project"].(*service.Project)))
 		group.Get("/", a.list)
 		group.Post("/", a.create)
-		group.Put("/{ProjectCode}", a.update)
-		group.Get("/{ProjectCode}", a.get)
+		group.Get("/{EnvCode}", a.get)
+		group.Put("/{EnvCode}", a.update)
+		group.Delete("/{EnvCode}", a.delete)
 	})
 	return router
 }
 
-func (a *ProjectEndpoints) withProjectService(r *http.Request) *service.Project {
+func (a *EnvEndpoints) withProjectService(r *http.Request) *service.Project {
 	log := GetLogger(r)
 	srv := a.Services["project"].(*service.Project)
 	srv.Logger = log
 	return srv
 }
 
-func (a *ProjectEndpoints) list(w http.ResponseWriter, r *http.Request) {
+func (a *EnvEndpoints) withEnvService(r *http.Request) *service.Environment {
+	srv := a.Services["envs"].(*service.Environment)
+	srv.Logger = GetLogger(r)
+	srv.Project = r.Context().Value(ContextProjectKey).(*models.Project)
+	return srv
+}
+
+func (a *EnvEndpoints) list(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
-	recs := a.withProjectService(r).List()
-	log.Debugf("Project.list: %d items found", len(recs))
+	recs := a.withEnvService(r).List()
+	log.Debugf("Env.list: %d items found", len(recs))
 	models.JSONResponse(w, r, recs)
 }
 
-func (a *ProjectEndpoints) create(w http.ResponseWriter, r *http.Request) {
+func (a *EnvEndpoints) create(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -58,7 +66,7 @@ func (a *ProjectEndpoints) create(w http.ResponseWriter, r *http.Request) {
 		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	var data models.Project
+	var data models.Environment
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Error("Can't parse request body")
 		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
@@ -66,30 +74,28 @@ func (a *ProjectEndpoints) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fill up default values
-	data.OwnerID = models.OwnerFromContext(r)
-	data.RegDate = time.Now()
-	data.Status = 1
+	data.ProjectID = a.withEnvService(r).Project.ID
 
-	// create project
-	resp, err := a.withProjectService(r).Create(data)
+	// create param
+	resp, err := a.withEnvService(r).Create(data)
 	if err != nil {
-		log.Errorf("Project.Service.Create: %s", err.Error())
+		log.Errorf("Env.Service.Create: %s", err.Error())
 		models.ErrorResponse(w, r, err)
 		return
 	}
 
-	log.Debugf("Project: %+v", resp)
+	log.Debugf("Env: %+v", resp)
 
 	models.JSONResponse(w, r, resp)
 }
 
-func (a *ProjectEndpoints) update(w http.ResponseWriter, r *http.Request) {
+func (a *EnvEndpoints) update(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
-	code := chi.URLParam(r, "ProjectCode")
+	code := chi.URLParam(r, "EnvCode")
 
-	// verify project existance
-	if ok := a.withProjectService(r).IsExist(code); !ok {
-		models.NotFoundResponse(w, r, fmt.Sprintf("Project with code [%s] is not found", code))
+	// verify param existance
+	if ok := a.withEnvService(r).IsExist(code); !ok {
+		models.NotFoundResponse(w, r, fmt.Sprintf("Env with code [%s] is not found", code))
 		return
 	}
 
@@ -99,47 +105,52 @@ func (a *ProjectEndpoints) update(w http.ResponseWriter, r *http.Request) {
 		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	var data models.Project
+	var data models.Environment
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Error("Can't parse request body")
 		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	// fill default
+	// fill up default values
 	data.Code = code
+	data.ProjectID = a.withEnvService(r).Project.ID
 
-	// update project
-	resp, err := a.withProjectService(r).Update(data)
+	// update params desc and values
+	resp, err := a.withEnvService(r).Update(data)
 	if err != nil {
-		log.Errorf("Project.Service.Update: %s", err.Error())
+		log.Errorf("Env.Service.Update: %s", err.Error())
 		models.ErrorResponse(w, r, err)
 		return
 	}
 
-	log.Debugf("Project: %+v", resp)
+	log.Debugf("Env: %+v", resp)
 
 	models.JSONResponse(w, r, resp)
 }
 
-func (a *ProjectEndpoints) get(w http.ResponseWriter, r *http.Request) {
+func (a *EnvEndpoints) get(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
-	code := chi.URLParam(r, "ProjectCode")
+	code := chi.URLParam(r, "EnvCode")
 
 	// verify project existance
-	if ok := a.withProjectService(r).IsExist(code); !ok {
+	if ok := a.withEnvService(r).IsExist(code); !ok {
 		models.NotFoundResponse(w, r, fmt.Sprintf("Project with code [%s] is not found", code))
 		return
 	}
 
-	resp, err := a.withProjectService(r).Get(code)
+	resp, err := a.withEnvService(r).Get(code)
 	if err != nil {
 		a.Logger.Error("Not found")
 		models.NotFoundResponse(w, r, "Resource not found")
 		return
 	}
 
-	log.Debugf("Project: %+v", resp)
+	log.Debugf("Env: %+v", resp)
 
 	models.JSONResponse(w, r, resp)
+}
+
+func (a *EnvEndpoints) delete(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusForbidden)
 }

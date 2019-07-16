@@ -34,28 +34,13 @@ type ParamEndpoints struct {
 func (a *ParamEndpoints) Routes() chi.Router {
 	router := chi.NewRouter()
 	router.Group(func(group chi.Router) {
-		group.Use(a.ProjectCtx)
+		group.Use(WithProjectCtx(a.Services["project"].(*service.Project)))
 		group.Get("/", a.list)
 		group.Post("/", a.create)
 		group.Put("/{ParamCode}", a.update)
 		group.Delete("/{ParamCode}", a.delete)
 	})
 	return router
-}
-
-// ProjectCtx sets project id to context
-func (a *ParamEndpoints) ProjectCtx(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		code := chi.URLParam(r, "ProjectCode")
-		project, err := a.withProjectService(r).Get(code)
-		if err != nil {
-			http.Error(w, http.StatusText(404), 404)
-			return
-		}
-		ctx := context.WithValue(r.Context(), ContextProjectKey, project)
-		a.withParamService(r).Project = project
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 func (a *ParamEndpoints) withParamService(r *http.Request) *service.Param {
@@ -95,7 +80,7 @@ func (a *ParamEndpoints) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fill up default values
-	data.Project = a.withParamService(r).Project.ID
+	data.ProjectID = a.withParamService(r).Project.ID
 
 	// create param
 	resp, err := a.withParamService(r).Create(data)
@@ -134,7 +119,8 @@ func (a *ParamEndpoints) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fill up default values
-	data.Project = a.withParamService(r).Project.ID
+	data.Code = code
+	data.ProjectID = a.withParamService(r).Project.ID
 
 	// update params desc and values
 	resp, err := a.withParamService(r).Update(data)

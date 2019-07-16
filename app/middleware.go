@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"bitbucket.org/toggly/toggly-server/models"
+	"bitbucket.org/toggly/toggly-server/service"
+	"github.com/go-chi/chi"
 	"github.com/op/go-logging"
 	"gopkg.in/toggly/go-utils.v2"
 )
@@ -58,4 +60,21 @@ func EnvironmentCtx(next http.Handler) http.Handler {
 func GetLogger(r *http.Request) *utils.StructuredLogger {
 	log := r.Context().Value(models.ContextLoggerKey).(*logging.Logger)
 	return &utils.StructuredLogger{Logger: log, R: r}
+}
+
+// WithProjectCtx sets project id to context
+func WithProjectCtx(srv *service.Project) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			code := chi.URLParam(r, "ProjectCode")
+			srv.Logger = GetLogger(r)
+			project, err := srv.Get(code)
+			if err != nil {
+				http.Error(w, http.StatusText(404), 404)
+				return
+			}
+			ctx := context.WithValue(r.Context(), ContextProjectKey, project)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

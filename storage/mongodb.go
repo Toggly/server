@@ -44,3 +44,8 @@ func (db *MongoStorage) ProjectCRUD() Project {
 func (db *MongoStorage) ParamCRUD(project primitive.ObjectID) Parameter {
 	return &mgoParams{Storage: db.Dbs, CRUD: db.GetParamsCollection(), ProjectID: project}
 }
+
+// EnvCRUD func
+func (db *MongoStorage) EnvCRUD(project primitive.ObjectID) Environment {
+	return &mgoEnvs{Storage: db.Dbs, CRUD: db.GetEnvsCollection(), ProjectID: project}
+}

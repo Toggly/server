@@ -28,4 +28,11 @@ type Parameter interface {
 
 // Environment interface
 type Environment interface {
+	List() []*models.Environment
+	Get(code string) (*models.Environment, error)
+	Create(data *models.Environment) (*models.Environment, error)
+	Update(data *models.Environment) (*models.Environment, error)
+	Delete(code string)
+
+	IsExist(code string) bool
 }
