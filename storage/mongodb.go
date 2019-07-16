@@ -2,9 +2,10 @@ package storage
 
 import (
 	dbStore "github.com/nodely/go-mongo-store"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Storage struct
+// MongoStorage struct
 type MongoStorage struct {
 	Dbs *dbStore.DbStorage
 }
@@ -37,4 +38,9 @@ func (db *MongoStorage) GetParamsCollection() dbStore.CRUD {
 // ProjectCRUD func
 func (db *MongoStorage) ProjectCRUD() Project {
 	return &mgoProject{Storage: db.Dbs, CRUD: db.GetProjectsCollection()}
+}
+
+// ParamCRUD func
+func (db *MongoStorage) ParamCRUD(project primitive.ObjectID) Parameter {
+	return &mgoParams{Storage: db.Dbs, CRUD: db.GetParamsCollection(), ProjectID: project}
 }

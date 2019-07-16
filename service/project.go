@@ -6,7 +6,7 @@ import (
 
 	"bitbucket.org/toggly/toggly-server/models"
 	"bitbucket.org/toggly/toggly-server/storage"
-	"github.com/op/go-logging"
+	"gopkg.in/toggly/go-utils.v2"
 )
 
 // Project Service
@@ -14,7 +14,7 @@ type Project struct {
 	Storage *storage.MongoStorage
 	Ctx     context.Context
 	Config  *models.Config
-	Logger  *logging.Logger
+	Logger  *utils.StructuredLogger
 }
 
 // IsExist checks that project exists by code
@@ -23,7 +23,7 @@ func (a *Project) IsExist(code string) bool {
 }
 
 // Get project by code
-func (a *Project) Get(code string) *models.Project {
+func (a *Project) Get(code string) (*models.Project, error) {
 	return a.Storage.ProjectCRUD().Get(code)
 }
 
@@ -62,7 +62,7 @@ func (a *Project) Update(data models.Project) (*models.Project, error) {
 
 	a.Logger.Debugf("Project.Update: %+v", data)
 
-	item := a.Storage.ProjectCRUD().Get(data.Code)
+	item, _ := a.Storage.ProjectCRUD().Get(data.Code)
 
 	// revalue existing data
 	item.Name = data.Name

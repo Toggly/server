@@ -17,11 +17,11 @@ import (
 
 // ProjectEndpoints API struct
 type ProjectEndpoints struct {
-	Dbs     *dbStore.DbStorage
-	Ctx     context.Context
-	Config  *models.Config
-	Logger  *logging.Logger
-	Service *service.Project
+	Dbs      *dbStore.DbStorage
+	Ctx      context.Context
+	Config   *models.Config
+	Logger   *logging.Logger
+	Services map[string]interface{}
 }
 
 // Routes returns api endpoints
@@ -36,9 +36,16 @@ func (a *ProjectEndpoints) Routes() chi.Router {
 	return router
 }
 
+func (a *ProjectEndpoints) withProjectService(r *http.Request) *service.Project {
+	log := GetLogger(r)
+	srv := a.Services["project"].(*service.Project)
+	srv.Logger = log
+	return srv
+}
+
 func (a *ProjectEndpoints) list(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
-	recs := a.Service.List()
+	recs := a.withProjectService(r).List()
 	log.Debugf("Project.list: %d items found", len(recs))
 	models.JSONResponse(w, r, recs)
 }
@@ -64,7 +71,7 @@ func (a *ProjectEndpoints) create(w http.ResponseWriter, r *http.Request) {
 	data.Status = 1
 
 	// create project
-	resp, err := a.Service.Create(data)
+	resp, err := a.withProjectService(r).Create(data)
 	if err != nil {
 		log.Errorf("Project.Service.Create: %s", err.Error())
 		models.ErrorResponse(w, r, err)
@@ -81,8 +88,7 @@ func (a *ProjectEndpoints) update(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "ProjectCode")
 
 	// verify project existance
-	if ok := a.Service.IsExist(code); !ok {
-		log.Errorf("Project with code [%s] is not found", code)
+	if ok := a.withProjectService(r).IsExist(code); !ok {
 		models.NotFoundResponse(w, r, fmt.Sprintf("Project with code [%s] is not found", code))
 		return
 	}
@@ -100,15 +106,10 @@ func (a *ProjectEndpoints) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fill up default values
-	data.OwnerID = models.OwnerFromContext(r)
-	data.RegDate = time.Now()
-	data.Status = 1
-
-	// create project
-	resp, err := a.Service.Create(data)
+	// update project
+	resp, err := a.withProjectService(r).Update(data)
 	if err != nil {
-		log.Errorf("Project.Service.Create: %s", err.Error())
+		log.Errorf("Project.Service.Update: %s", err.Error())
 		models.ErrorResponse(w, r, err)
 		return
 	}
@@ -123,13 +124,17 @@ func (a *ProjectEndpoints) get(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "ProjectCode")
 
 	// verify project existance
-	if ok := a.Service.IsExist(code); !ok {
-		log.Errorf("Project with code [%s] is not found", code)
+	if ok := a.withProjectService(r).IsExist(code); !ok {
 		models.NotFoundResponse(w, r, fmt.Sprintf("Project with code [%s] is not found", code))
 		return
 	}
 
-	resp := a.Service.Get(code)
+	resp, err := a.withProjectService(r).Get(code)
+	if err != nil {
+		a.Logger.Error("Not found")
+		models.NotFoundResponse(w, r, "Resource not found")
+		return
+	}
 
 	log.Debugf("Project: %+v", resp)
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
+	"github.com/op/go-logging"
 )
 
 // ErrorResponseWithStatus creates {error: message} json body and responds with error code
@@ -28,6 +29,8 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, data interface{}) {
 
 // NotFoundResponse creates empty json body and responds with 404 code
 func NotFoundResponse(w http.ResponseWriter, r *http.Request, message string) {
+	log := r.Context().Value(ContextLoggerKey).(*logging.Logger)
+	log.Error(message)
 	ErrorResponseWithStatus(w, r, errors.New(message), http.StatusNotFound)
 }
 

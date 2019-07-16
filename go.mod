@@ -21,6 +21,7 @@ require (
 	github.com/tidwall/rtree v0.0.0-20180113144539-6cd427091e0e // indirect
 	github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563 // indirect
 	go.mongodb.org/mongo-driver v1.0.3
+	google.golang.org/appengine v1.6.1
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/nodely/mongo-session.v3 v3.0.0-20190627075425-bd4145abce26
 	gopkg.in/session.v3 v3.1.2

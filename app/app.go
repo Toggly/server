@@ -75,18 +75,35 @@ func (t *Toggly) versions(router chi.Router) {
 
 // routes for API v1
 func (t *Toggly) v1(router chi.Router) {
-	router.Mount("/project", (&ProjectEndpoints{
-		Dbs:    t.Dbs,
+	services := make(map[string]interface{}, 0)
+	services["project"] = &service.Project{
+		Storage: &storage.MongoStorage{
+			Dbs: t.Dbs,
+		},
 		Ctx:    t.Ctx,
 		Config: t.Config,
-		Logger: t.Logger,
-		Service: &service.Project{
-			Storage: &storage.MongoStorage{
-				Dbs: t.Dbs,
-			},
-			Ctx:    t.Ctx,
-			Config: t.Config,
-			Logger: t.Logger,
+	}
+	services["params"] = &service.Param{
+		Storage: &storage.MongoStorage{
+			Dbs: t.Dbs,
 		},
+		Ctx:    t.Ctx,
+		Config: t.Config,
+	}
+
+	router.Mount("/project", (&ProjectEndpoints{
+		Dbs:      t.Dbs,
+		Ctx:      t.Ctx,
+		Config:   t.Config,
+		Logger:   t.Logger,
+		Services: services,
+	}).Routes())
+
+	router.Mount("/project/{ProjectCode}/param", (&ParamEndpoints{
+		Dbs:      t.Dbs,
+		Ctx:      t.Ctx,
+		Config:   t.Config,
+		Logger:   t.Logger,
+		Services: services,
 	}).Routes())
 }

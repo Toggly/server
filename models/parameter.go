@@ -1,5 +1,7 @@
 package models
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 // Parameter types enum
 const (
 	ParameterTypeBool   = "bool"
@@ -9,12 +11,11 @@ const (
 
 // Parameter type
 type Parameter struct {
-	Code string `json:"code"`
-	// Project       string        `json:"project"`
-	// Environment   string        `json:"environment"`
-	// Group         string        `json:"group"`
-	Description   string        `json:"description"`
-	Type          string        `json:"type"`
-	Value         interface{}   `json:"value"`
-	AllowedValues []interface{} `json:"allowed_values,omitempty" bson:"allowed_values,omitempty"`
+	ID            primitive.ObjectID `json:"-" bson:"_id,omitempty"`
+	Code          string             `json:"code"`
+	Project       primitive.ObjectID `json:"-" bson:"project_id"`
+	Description   string             `json:"description"`
+	Type          string             `json:"type"`
+	Value         interface{}        `json:"value"`
+	AllowedValues []interface{}      `json:"allowed_values,omitempty" bson:"allowed_values,omitempty"`
 }
