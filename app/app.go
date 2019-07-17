@@ -97,6 +97,13 @@ func (t *Toggly) v1(router chi.Router) {
 		Ctx:    t.Ctx,
 		Config: t.Config,
 	}
+	services["pkgs"] = &service.Package{
+		Storage: &storage.MongoStorage{
+			Dbs: t.Dbs,
+		},
+		Ctx:    t.Ctx,
+		Config: t.Config,
+	}
 
 	router.Mount("/project", (&ProjectEndpoints{
 		Dbs:      t.Dbs,
@@ -115,6 +122,14 @@ func (t *Toggly) v1(router chi.Router) {
 	}).Routes())
 
 	router.Mount("/project/{ProjectCode}/env", (&EnvEndpoints{
+		Dbs:      t.Dbs,
+		Ctx:      t.Ctx,
+		Config:   t.Config,
+		Logger:   t.Logger,
+		Services: services,
+	}).Routes())
+
+	router.Mount("/project/{ProjectCode}/package", (&PackageEndpoints{
 		Dbs:      t.Dbs,
 		Ctx:      t.Ctx,
 		Config:   t.Config,

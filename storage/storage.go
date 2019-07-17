@@ -36,3 +36,14 @@ type Environment interface {
 
 	IsExist(code string) bool
 }
+
+// Package interface
+type Package interface {
+	List() []*models.Package
+	Get(code string) (*models.Package, error)
+	Create(data *models.Package) (*models.Package, error)
+	Update(data *models.Package) (*models.Package, error)
+	Delete(code string)
+
+	IsExist(code string) bool
+}
