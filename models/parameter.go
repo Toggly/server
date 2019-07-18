@@ -7,6 +7,7 @@ const (
 	ParameterTypeBool   = "bool"
 	ParameterTypeString = "string"
 	ParameterTypeInt    = "int"
+	ParameterTypeFloat  = "float64"
 )
 
 // Parameter type

@@ -20,6 +20,11 @@ func (db *MongoStorage) GetEnvsCollection() dbStore.CRUD {
 	return db.Dbs.GetDbCollection("envs")
 }
 
+// GetEnvsKeysCollection func
+func (db *MongoStorage) GetEnvsKeysCollection() dbStore.CRUD {
+	return db.Dbs.GetDbCollection("envs_keys")
+}
+
 // GetPackagesCollection func
 func (db *MongoStorage) GetPackagesCollection() dbStore.CRUD {
 	return db.Dbs.GetDbCollection("packages")
@@ -48,6 +53,11 @@ func (db *MongoStorage) ParamCRUD(project primitive.ObjectID) Parameter {
 // EnvCRUD func
 func (db *MongoStorage) EnvCRUD(project primitive.ObjectID) Environment {
 	return &mgoEnvs{Storage: db.Dbs, CRUD: db.GetEnvsCollection(), ProjectID: project}
+}
+
+// EnvKeyCRUD func
+func (db *MongoStorage) EnvKeyCRUD(project primitive.ObjectID) EnvironmentKey {
+	return &mgoEnvsKeys{Storage: db.Dbs, CRUD: db.GetEnvsKeysCollection(), ProjectID: project}
 }
 
 // PackageCRUD func

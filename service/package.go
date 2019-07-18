@@ -37,6 +37,10 @@ func (a *Package) List() []*models.Package {
 // Create param
 func (a *Package) Create(data models.Package) (*models.Package, error) {
 	if data.Code == "" {
+		return nil, models.ErrBadRequest("Code is empty")
+	}
+
+	if models.IsCodeValid(data.Code) {
 		return nil, models.ErrBadRequest("Code is invalid")
 	}
 

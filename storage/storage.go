@@ -37,6 +37,11 @@ type Environment interface {
 	IsExist(code string) bool
 }
 
+// EnvironmentKey interface
+type EnvironmentKey interface {
+	Provision(data *models.EnvAPIKey) (*models.EnvAPIKey, error)
+}
+
 // Package interface
 type Package interface {
 	List() []*models.Package

@@ -20,6 +20,12 @@ type mgoEnvs struct {
 	ProjectID primitive.ObjectID
 }
 
+type mgoEnvsKeys struct {
+	Storage   *dbStore.DbStorage
+	CRUD      dbStore.CRUD
+	ProjectID primitive.ObjectID
+}
+
 func (a *mgoEnvs) List() []*models.Environment {
 	results := make([]*models.Environment, 0)
 	cursor, err := a.CRUD.Find(bson.M{"project_id": a.ProjectID}, options.Find().SetSort(bson.D{{"protected", -1}, {"code", 1}}))
@@ -84,6 +90,30 @@ func (a *mgoEnvs) ensureIndexes() error {
 		Keys: bsonx.Doc{
 			{Key: "project_id", Value: bsonx.Int32(1)},
 			{Key: "code", Value: bsonx.Int32(1)},
+		},
+		Options: options.Index().SetUnique(true),
+	})
+}
+
+func (a *mgoEnvsKeys) Provision(data *models.EnvAPIKey) (*models.EnvAPIKey, error) {
+	a.ensureIndexes()
+
+	ins, err := a.CRUD.Insert(data)
+	if err != nil {
+		return nil, err
+	}
+	rec, err := a.CRUD.GetItem(ins[0].(primitive.ObjectID), reflect.TypeOf(new(models.EnvAPIKey)))
+	if err != nil {
+		return nil, err
+	}
+	return rec.(*models.EnvAPIKey), nil
+}
+
+func (a *mgoEnvsKeys) ensureIndexes() error {
+	return a.CRUD.EnsureIndexesRaw(mongo.IndexModel{
+		Keys: bsonx.Doc{
+			{Key: "key", Value: bsonx.Int32(1)},
+			{Key: "env_id", Value: bsonx.Int32(1)},
 		},
 		Options: options.Index().SetUnique(true),
 	})

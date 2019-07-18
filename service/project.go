@@ -41,6 +41,10 @@ func (a *Project) Create(data models.Project) (*models.Project, error) {
 		return nil, models.ErrBadRequest("Name is invalid")
 	}
 
+	if models.IsCodeValid(data.Code) {
+		return nil, models.ErrBadRequest("Code is invalid")
+	}
+
 	a.Logger.Debugf("Project.Create: %+v", data)
 
 	resp, err := a.Storage.ProjectCRUD().Create(&data)

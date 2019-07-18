@@ -136,4 +136,12 @@ func (t *Toggly) v1(router chi.Router) {
 		Logger:   t.Logger,
 		Services: services,
 	}).Routes())
+
+	router.Mount("/get/{ProjectCode}/{PackageCode}", (&ParamEndpoints{
+		Dbs:      t.Dbs,
+		Ctx:      t.Ctx,
+		Config:   t.Config,
+		Logger:   t.Logger,
+		Services: services,
+	}).GetterRoutes())
 }

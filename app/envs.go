@@ -33,6 +33,9 @@ func (a *EnvEndpoints) Routes() chi.Router {
 		group.Get("/{EnvCode}", a.get)
 		group.Put("/{EnvCode}", a.update)
 		group.Delete("/{EnvCode}", a.delete)
+
+		// key stuff
+		group.Post("/{EnvCode}/key", a.createKey)
 	})
 	return router
 }
@@ -153,4 +156,42 @@ func (a *EnvEndpoints) get(w http.ResponseWriter, r *http.Request) {
 
 func (a *EnvEndpoints) delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusForbidden)
+}
+
+func (a *EnvEndpoints) createKey(w http.ResponseWriter, r *http.Request) {
+	log := GetLogger(r)
+	code := chi.URLParam(r, "EnvCode")
+
+	// verify project existance
+	if ok := a.withEnvService(r).IsExist(code); !ok {
+		models.NotFoundResponse(w, r, fmt.Sprintf("Project with code [%s] is not found", code))
+		return
+	}
+
+	env, _ := a.withEnvService(r).Get(code)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error("Can't read request body")
+		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	var data models.EnvAPIKey
+	if err := json.Unmarshal(body, &data); err != nil {
+		log.Error("Can't parse request body")
+		models.ErrorResponseWithStatus(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	data.EnvID = env.ID
+
+	resp, err := a.withEnvService(r).KeyProvision(data)
+	if err != nil {
+		log.Errorf("Env.Key.Provision: %s", err.Error())
+		models.ErrorResponse(w, r, err)
+		return
+	}
+
+	log.Debugf("Key: %+v", resp)
+
+	models.JSONResponse(w, r, resp)
 }

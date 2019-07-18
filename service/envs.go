@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 	"strings"
+	"time"
 
 	"bitbucket.org/toggly/toggly-server/models"
 	"bitbucket.org/toggly/toggly-server/storage"
+	"github.com/gofrs/uuid"
 	"gopkg.in/toggly/go-utils.v2"
 )
 
@@ -65,6 +69,28 @@ func (a *Environment) Update(data models.Environment) (*models.Environment, erro
 	item.Description = data.Description
 
 	resp, err := a.Storage.EnvCRUD(a.Project.ID).Update(item)
+	if err != nil {
+		return nil, models.ErrInternalServer(err.Error())
+	}
+
+	return resp, nil
+}
+
+// KeyProvision param
+func (a *Environment) KeyProvision(data models.EnvAPIKey) (*models.EnvAPIKey, error) {
+
+	if data.Name == "" {
+		return nil, models.ErrBadRequest("Name is empty")
+	}
+
+	u, _ := uuid.NewV4()
+	data.Key = u.String()
+	secret := make([]byte, 64)
+	rand.Read(secret)
+	data.Secret = fmt.Sprintf("%x", secret)
+	data.CreatedDate = time.Now()
+
+	resp, err := a.Storage.EnvKeyCRUD(a.Project.ID).Provision(&data)
 	if err != nil {
 		return nil, models.ErrInternalServer(err.Error())
 	}

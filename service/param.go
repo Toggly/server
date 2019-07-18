@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/toggly/toggly-server/models"
 	"bitbucket.org/toggly/toggly-server/storage"
+	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/toggly/go-utils.v2"
 )
 
@@ -37,13 +38,24 @@ func (a *Param) List() []*models.Parameter {
 // Create param
 func (a *Param) Create(data models.Parameter) (*models.Parameter, error) {
 	if data.Code == "" {
-		return nil, models.ErrBadRequest("Code is invalid")
+		return nil, models.ErrBadRequest("Code is empty")
 	}
 	if data.Type == "" {
-		return nil, models.ErrBadRequest("Type is invalid")
+		return nil, models.ErrBadRequest("Type is empty")
 	}
 	if data.Value == nil {
-		return nil, models.ErrBadRequest("Value is invalid")
+		return nil, models.ErrBadRequest("Value is empty")
+	}
+
+	if models.IsCodeValid(data.Code) {
+		return nil, models.ErrBadRequest("Code is invalid")
+	}
+
+	if data.Type != models.ParameterTypeBool &&
+		data.Type != models.ParameterTypeFloat &&
+		data.Type != models.ParameterTypeInt &&
+		data.Type != models.ParameterTypeString {
+		return nil, models.ErrBadRequest("Type is invalid")
 	}
 
 	a.Logger.Debugf("Param.Create: %+v", data)
@@ -76,4 +88,14 @@ func (a *Param) Update(data models.Parameter) (*models.Parameter, error) {
 	}
 
 	return resp, nil
+}
+
+// Override parameter by package/env
+func (a *Param) Override(data bson.M) error {
+	if data["type"] == "environment" {
+
+	} else if data["type"] == "package" {
+
+	}
+	return models.ErrBadRequest("Type is not valid")
 }
