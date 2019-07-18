@@ -51,6 +51,7 @@ func (a *ParamEndpoints) GetterRoutes() chi.Router {
 	router := chi.NewRouter()
 	router.Group(func(r chi.Router) {
 		r.Use(WithProjectCtx(a.Services["project"].(*service.Project)))
+		r.Use(EnvironmentCtx(a.Services["envs"].(*service.Environment)))
 
 		r.Get("/{ParamCode}", a.getParamValue)
 	})
@@ -60,6 +61,7 @@ func (a *ParamEndpoints) GetterRoutes() chi.Router {
 func (a *ParamEndpoints) withParamService(r *http.Request) *service.Param {
 	log := GetLogger(r)
 	srv := a.Services["params"].(*service.Param)
+	srv.Project = r.Context().Value(ContextProjectKey).(*models.Project)
 	srv.Logger = log
 	return srv
 }

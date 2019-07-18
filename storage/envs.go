@@ -44,10 +44,10 @@ func (a *mgoEnvs) List() []*models.Environment {
 func (a *mgoEnvs) Get(code string) (*models.Environment, error) {
 	var data models.Environment
 	res := a.CRUD.FindOne(bson.M{"code": code, "project_id": a.ProjectID})
+	res.Decode(&data)
 	if res.Err() != nil {
 		return nil, res.Err()
 	}
-	res.Decode(&data)
 	return &data, nil
 }
 
@@ -107,6 +107,14 @@ func (a *mgoEnvsKeys) Provision(data *models.EnvAPIKey) (*models.EnvAPIKey, erro
 		return nil, err
 	}
 	return rec.(*models.EnvAPIKey), nil
+}
+
+func (a *mgoEnvsKeys) Check(key string, secret string) error {
+	var data models.EnvAPIKey
+	res := a.CRUD.FindOne(bson.M{"key": key, "secret": secret})
+	// todo decide do we need api key data
+	res.Decode(&data)
+	return res.Err()
 }
 
 func (a *mgoEnvsKeys) ensureIndexes() error {

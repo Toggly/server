@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -96,4 +98,17 @@ func (a *Environment) KeyProvision(data models.EnvAPIKey) (*models.EnvAPIKey, er
 	}
 
 	return resp, nil
+}
+
+// CheckAuthAPIKey checks authentication in the header
+func (a *Environment) CheckAuthAPIKey(auth string) error {
+	if auth == "" {
+		return errors.New("Authorization header is empty")
+	}
+	data, err := base64.StdEncoding.DecodeString(strings.Replace(auth, "Basic ", "", 1))
+	if err != nil {
+		return err
+	}
+	auths := strings.Split(string(data), ":")
+	return a.Storage.EnvKeyCRUD(a.Project.ID).Check(auths[0], auths[1])
 }

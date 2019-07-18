@@ -40,6 +40,7 @@ type Environment interface {
 // EnvironmentKey interface
 type EnvironmentKey interface {
 	Provision(data *models.EnvAPIKey) (*models.EnvAPIKey, error)
+	Check(key string, secret string) error
 }
 
 // Package interface

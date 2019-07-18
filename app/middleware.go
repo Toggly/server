@@ -15,6 +15,7 @@ import (
 const (
 	XTogglyOwnerID string = "X-Toggly-Owner-Id"
 	XTogglyEnvID   string = "X-Toggly-Environment"
+	XTogglyAuth    string = "Authorization"
 )
 
 // OwnerCtx adds auth data to context
@@ -40,20 +41,36 @@ func OwnerCtx(defaultOwnerID string) func(http.Handler) http.Handler {
 }
 
 // EnvironmentCtx adds auth data to context
-func EnvironmentCtx(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		log := GetLogger(r)
-		env := r.Header.Get(http.CanonicalHeaderKey(XTogglyEnvID))
-		if env == "" {
-			log.Error("Environemnt context is missed")
-			models.ForbiddenResponse(w, r, "Unable to determine environment")
-			return
+func EnvironmentCtx(srv *service.Environment) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			log := GetLogger(r)
+			env := r.Header.Get(http.CanonicalHeaderKey(XTogglyEnvID))
+			if env == "" {
+				log.Error("Environment context is missed")
+				models.ForbiddenResponse(w, r, "Unable to determine environment")
+				return
+			}
+			ctx := r.Context()
+			srv.Logger = log
+			srv.Project = ctx.Value(ContextProjectKey).(*models.Project)
+			// verify env with given project id
+			if _, err := srv.Get(env); err != nil {
+				log.Errorf("Environment [%s] was not found by given project [%s]", env, srv.Project.Code)
+				models.ForbiddenResponse(w, r, "Unable to verify environment")
+				return
+			}
+			// verify authentication keys
+			if err := srv.CheckAuthAPIKey(r.Header.Get(http.CanonicalHeaderKey(XTogglyAuth))); err != nil {
+				log.Errorf("Request authentiction failure: %s", err.Error())
+				models.UnauthorizedResponse(w, r)
+				return
+			}
+			ctx = context.WithValue(ctx, models.CtxValueEnvID, env)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, models.CtxValueEnvID, env)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		return http.HandlerFunc(fn)
 	}
-	return http.HandlerFunc(fn)
 }
 
 // GetLogger gets logger instance from context
