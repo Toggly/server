@@ -5,7 +5,7 @@ services:
       name: toggly/core
       tag: latest
     resources: {}
-      service:
+    service:
       type: ClusterIP
       port: 80
     ingress:
@@ -22,4 +22,8 @@ services:
         - toggly.me
         secretName: toggly-me-tls  
 
+secrets:
+  dbconnection: mongodb://localhost/toggly
+  dbname: toggly
+  sessionskey: {{ randAlphaNum 32 }}
 

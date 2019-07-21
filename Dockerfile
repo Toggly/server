@@ -12,7 +12,7 @@ FROM alpine:3.9
 
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /opt
+WORKDIR /opt/toggly
 
 COPY --from=builder /opt/src/toggly-app /opt/src/configs ./
 

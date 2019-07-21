@@ -35,15 +35,29 @@ spec:
           env:
           - name: APP_CONFIG_PATH
             value: "/opt/toggly/configs/application.yml"
-          volumeMounts:
-          - name: config-volume
-            mountPath: "/opt/toggly/configs"
-            readOnly: true
+          - name: PORT
+            value: 8080
+          - name: DB_CONNECTION
+            valueFrom:
+            secretKeyRef:
+              name: {{ include "toggly.fullname" . }}
+              key: mongodb
+          - name: DB_CONNECTION
+            valueFrom:
+            secretKeyRef:
+              name: {{ include "toggly.fullname" . }}
+              key: dbconnection
+          - name: DB_NAME
+            valueFrom:
+            secretKeyRef:
+              name: {{ include "toggly.fullname" . }}
+              key: dbname
+          - name: SESSIONS_KEY
+            valueFrom:
+            secretKeyRef:
+              name: {{ include "toggly.fullname" . }}
+              key: sessionskey
       {{- if .Values.services.core.image.secretName }}
       imagePullSecrets:
       - name: {{ .Values.services.core.image.secretName }}
       {{ end }}}}
-      volumes:
-      - name: config-volume
-        configMap:
-          name: {{ include "toggly.fullname" . }}
