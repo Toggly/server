@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bitbucket.org/toggly/toggly-server/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Project interface
@@ -51,5 +52,10 @@ type Package interface {
 	Update(data *models.Package) (*models.Package, error)
 	Delete(code string)
 
+	Override(id primitive.ObjectID, paramID primitive.ObjectID, value interface{}) error
+
 	IsExist(code string) bool
+	IsParamExist(id primitive.ObjectID, paramID primitive.ObjectID) bool
+
+	ReadParam(id primitive.ObjectID, paramID primitive.ObjectID) (*models.PackageParamLink, error)
 }

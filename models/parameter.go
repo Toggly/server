@@ -20,3 +20,10 @@ type Parameter struct {
 	Value         interface{}        `json:"value"`
 	AllowedValues []interface{}      `json:"allowed_values,omitempty" bson:"allowed_values,omitempty"`
 }
+
+// ParameterValue final struct
+type ParameterValue struct {
+	Code  string      `json:"code"`
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}

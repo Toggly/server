@@ -66,6 +66,14 @@ func (a *ParamEndpoints) withParamService(r *http.Request) *service.Param {
 	return srv
 }
 
+func (a *ParamEndpoints) withPackageService(r *http.Request) *service.Package {
+	log := GetLogger(r)
+	srv := a.Services["pkgs"].(*service.Package)
+	srv.Project = r.Context().Value(ContextProjectKey).(*models.Project)
+	srv.Logger = log
+	return srv
+}
+
 func (a *ParamEndpoints) withProjectService(r *http.Request) *service.Project {
 	log := GetLogger(r)
 	srv := a.Services["project"].(*service.Project)
@@ -115,7 +123,7 @@ func (a *ParamEndpoints) override(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
 	code := chi.URLParam(r, "ParamCode")
 
-	// verify param existance
+	// verify param existence
 	if ok := a.withParamService(r).IsExist(code); !ok {
 		models.NotFoundResponse(w, r, fmt.Sprintf("Param with code [%s] is not found", code))
 		return
@@ -134,7 +142,7 @@ func (a *ParamEndpoints) override(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := a.withParamService(r).Override(data); err != nil {
+	if err := a.withParamService(r).Override(code, data); err != nil {
 		models.ErrorResponse(w, r, err)
 		return
 	}
@@ -187,5 +195,33 @@ func (a *ParamEndpoints) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *ParamEndpoints) getParamValue(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
+	log := GetLogger(r)
+
+	pkgCode := chi.URLParam(r, "PackageCode")
+	paramCode := chi.URLParam(r, "ParamCode")
+
+	// verify package existence
+	if ok := a.withPackageService(r).IsExist(pkgCode); !ok {
+		models.NotFoundResponse(w, r, fmt.Sprintf("Package with code [%s] is not found", pkgCode))
+		return
+	}
+
+	// verify param existence
+	if ok := a.withParamService(r).IsExist(paramCode); !ok {
+		models.NotFoundResponse(w, r, fmt.Sprintf("Param with code [%s] is not found", paramCode))
+		return
+	}
+
+	log.Debugf("Getting value for param [%s] from package [%s]", paramCode, pkgCode)
+
+	// trying to get value from package
+	resp, err := a.withParamService(r).GetParamValue(pkgCode, paramCode)
+	if err != nil {
+		models.ErrorResponse(w, r, err)
+		return
+	}
+
+	log.Debugf("Param: [%+v]", resp)
+
+	models.JSONResponse(w, r, resp)
 }

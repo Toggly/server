@@ -61,6 +61,11 @@ func ErrInternalServer(message string) *ErrStatusedResponse {
 	return &ErrStatusedResponse{Message: message, Code: http.StatusInternalServerError}
 }
 
+// ErrNotFound func
+func ErrNotFound(message string) *ErrStatusedResponse {
+	return &ErrStatusedResponse{Message: message, Code: http.StatusNotFound}
+}
+
 // ErrConflict func
 func ErrConflict(message string) *ErrStatusedResponse {
 	return &ErrStatusedResponse{Message: message, Code: http.StatusConflict}

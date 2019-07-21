@@ -38,10 +38,10 @@ func (a *mgoPackage) List() []*models.Package {
 func (a *mgoPackage) Get(code string) (*models.Package, error) {
 	var data models.Package
 	res := a.CRUD.FindOne(bson.M{"code": code, "project_id": a.ProjectID})
+	res.Decode(&data)
 	if res.Err() != nil {
 		return nil, res.Err()
 	}
-	res.Decode(&data)
 	return &data, nil
 }
 
@@ -77,6 +77,38 @@ func (a *mgoPackage) Delete(code string) {}
 
 func (a *mgoPackage) IsExist(code string) bool {
 	return a.CRUD.Count(bson.M{"code": code}) != 0
+}
+
+func (a *mgoPackage) IsParamExist(id primitive.ObjectID, paramID primitive.ObjectID) bool {
+	return a.CRUD.Count(bson.M{"params._id": paramID, "_id": id}) != 0
+}
+
+func (a *mgoPackage) Override(id primitive.ObjectID, paramID primitive.ObjectID, value interface{}) error {
+	doc, err := a.CRUD.GetItem(id, reflect.TypeOf(new(models.Package)))
+	if err != nil {
+		return err
+	}
+	pkg := doc.(*models.Package)
+	pkg.Params = append(pkg.Params, models.PackageParamLink{
+		ID:    paramID,
+		Value: value,
+	})
+	return a.CRUD.SaveItem(id, pkg)
+}
+
+// ReadParam gets parameter from package if exists
+func (a *mgoPackage) ReadParam(id primitive.ObjectID, paramID primitive.ObjectID) (*models.PackageParamLink, error) {
+	doc, err := a.CRUD.GetItem(id, reflect.TypeOf(new(models.Package)))
+	if err != nil {
+		return nil, err
+	}
+	pkg := doc.(*models.Package)
+	for _, p := range pkg.Params {
+		if p.ID == paramID {
+			return &p, nil
+		}
+	}
+	return nil, nil
 }
 
 func (a *mgoPackage) ensureIndexes() error {
