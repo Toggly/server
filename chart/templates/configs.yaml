@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "toggly.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+data: 
+  application.yml: |
+    port: ${PORT}
+    multiUser: false
+    storage: 
+      driver: mongodb
+      connection: ${DB_CONNECTION}
+      name: ${DB_NAME}
+    sessions:
+      key: ${SESSIONS_KEY}
+

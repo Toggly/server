@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "toggly.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "toggly.name" . }}
+    helm.sh/chart: {{ include "toggly.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.services.core.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "toggly.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "toggly.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.services.core.image.name }}:{{ .Values.services.core.image.tag }}
+          {{- if .Values.services.core.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.services.core.image.pullPolicy }}
+          {{ end }}
+          ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.services.core.resources | nindent 12 }}
+          env:
+          - name: APP_CONFIG_PATH
+            value: "/opt/toggly/configs/application.yml"
+          volumeMounts:
+          - name: config-volume
+            mountPath: "/opt/toggly/configs"
+            readOnly: true
+      {{- if .Values.services.core.image.secretName }}
+      imagePullSecrets:
+      - name: {{ .Values.services.core.image.secretName }}
+      {{ end }}}}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "toggly.fullname" . }}
