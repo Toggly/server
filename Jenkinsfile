@@ -1,6 +1,6 @@
 def label = "${env.NODE}"
 def deployJob = "${env.DEPLOY_JOB}"
-def DOCKER_REGISTRY = "https://docker.io"
+def DOCKER_REGISTRY = ""
 def GIT_COMMIT
 def GIT_COMMIT_SHORT
 
