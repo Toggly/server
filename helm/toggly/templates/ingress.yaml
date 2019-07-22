@@ -1,4 +1,4 @@
-{{- if .Values.codeapi.ingress.enabled -}}
+{{- if .Values.services.core.ingress.enabled -}}
 {{- $fullName := include "toggly.fullname" . -}}
 apiVersion: extensions/v1beta1
 kind: Ingress

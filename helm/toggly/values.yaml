@@ -9,14 +9,14 @@ services:
       type: ClusterIP
       port: 80
     ingress:
-      enabled: true
+      enabled: false
       annotations: 
         kubernetes.io/ingress.class: nginx
         nginx.ingress.kubernetes.io/ssl-redirect: "false"
       hosts:
         - host: api.toggly.me
           paths: 
-          - /rest-api
+          - /
       tls: 
       - hosts:
         - toggly.me
@@ -25,5 +25,4 @@ services:
 secrets:
   dbconnection: mongodb://localhost/toggly
   dbname: toggly
-  sessionskey: {{ randAlphaNum 32 }}
 

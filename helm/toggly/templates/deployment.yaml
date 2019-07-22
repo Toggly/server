@@ -34,30 +34,25 @@ spec:
             {{- toYaml .Values.services.core.resources | nindent 12 }}
           env:
           - name: APP_CONFIG_PATH
-            value: "/opt/toggly/configs/application.yml"
+            value: /opt/toggly/application.yml
           - name: PORT
-            value: 8080
+            value: "8080"
           - name: DB_CONNECTION
             valueFrom:
-            secretKeyRef:
-              name: {{ include "toggly.fullname" . }}
-              key: mongodb
-          - name: DB_CONNECTION
-            valueFrom:
-            secretKeyRef:
-              name: {{ include "toggly.fullname" . }}
-              key: dbconnection
+              secretKeyRef:
+                name: {{ include "toggly.fullname" . }}
+                key: dbconnection
           - name: DB_NAME
             valueFrom:
-            secretKeyRef:
-              name: {{ include "toggly.fullname" . }}
-              key: dbname
+              secretKeyRef:
+                name: {{ include "toggly.fullname" . }}
+                key: dbname
           - name: SESSIONS_KEY
             valueFrom:
-            secretKeyRef:
-              name: {{ include "toggly.fullname" . }}
-              key: sessionskey
+              secretKeyRef:
+                name: {{ include "toggly.fullname" . }}
+                key: sessionskey
       {{- if .Values.services.core.image.secretName }}
       imagePullSecrets:
       - name: {{ .Values.services.core.image.secretName }}
-      {{ end }}}}
+      {{ end }}
