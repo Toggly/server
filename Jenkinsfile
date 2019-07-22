@@ -56,7 +56,7 @@ timestamps {
     }
 
     stage("Deploy") {
-      if (env.DEPLOY) {
+      if (env.DEPLOY == 'true') {
         build job: "${deployJob}", parameters: [
           string(name: 'ENV', value: "${ENV}"),
           string(name: 'COMPONENT', value: "toggly-core"),
