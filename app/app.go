@@ -27,7 +27,7 @@ type Toggly struct {
 // Run Toggly App
 func (t *Toggly) Run() {
 	log := t.Logger
-	routes := t.Router("/")
+	routes := t.Router(t.Config.RootPath)
 	if t.Config.Port == 0 {
 		t.Config.Port = 8080
 	}
@@ -49,6 +49,8 @@ func (t *Toggly) Run() {
 
 // Router returns router configuration
 func (t *Toggly) Router(basePath string) chi.Router {
+	log := t.Logger
+
 	router := chi.NewRouter()
 	router.Use(utils.RequestIDCtx)
 	router.Use(middleware.RealIP)
@@ -64,6 +66,19 @@ func (t *Toggly) Router(basePath string) chi.Router {
 		router.Use(OwnerCtx("NO_OWNER_ID_MODE"))
 	}
 	router.Route(basePath, t.versions)
+
+	routeslog := "\n"
+	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		routeslog = routeslog + fmt.Sprintf("\x1b[32m→\x1b[0m %s %s\n", method, route)
+		return nil
+	}
+
+	if err := chi.Walk(router, walkFunc); err != nil {
+		log.Errorf("Logging err: %s\n", err.Error())
+	} else {
+		log.Infof("Routes:\n%s\n", routeslog)
+	}
+
 	return router
 }
 

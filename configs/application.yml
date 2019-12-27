@@ -1,4 +1,5 @@
 port: ${PORT}
+rootPath: /api
 multiUser: false
 storage: 
   driver: mongodb

@@ -11,6 +11,7 @@ type Config struct {
 	Storage       *Storage          `yaml:"storage"`
 	Sessions      map[string]string `yaml:"sessions"`
 	MultiUserMode bool              `yaml:"multiUser"`
+	RootPath      string            `yaml:"rootPath"`
 }
 
 // Storage struct
@@ -34,9 +35,13 @@ const (
 )
 
 const (
+	// CtxAPIVersion key
 	CtxAPIVersion contextKey = iota
+	// CtxValueOwner key
 	CtxValueOwner
+	// CtxValueEnvID key
 	CtxValueEnvID
+	// CtxValueAuth key
 	CtxValueAuth
 )
 
