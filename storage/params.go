@@ -20,9 +20,18 @@ type mgoParams struct {
 	ProjectID primitive.ObjectID
 }
 
-func (a *mgoParams) List() []*models.Parameter {
+func (a *mgoParams) List(q string) []*models.Parameter {
 	results := make([]*models.Parameter, 0)
-	cursor, err := a.CRUD.Find(bson.M{"project_id": a.ProjectID}, options.Find().SetSort(bson.D{{"code", 1}}))
+	bm := bson.M{"project_id": a.ProjectID}
+	if q != "" && len(q) > 3 {
+		bm["$or"] = bson.A{bson.M{
+			"code": bson.M{"$regex": q, "$options": "i"},
+		}, bson.M{
+			"description": bson.M{"$regex": q, "$options": "i"},
+		}}
+	}
+	fmt.Printf("Query: %+v", bm)
+	cursor, err := a.CRUD.Find(bm, options.Find().SetSort(bson.D{{"code", 1}}))
 	if err != nil {
 		fmt.Println(err.Error())
 		return results
@@ -73,7 +82,10 @@ func (a *mgoParams) Update(data *models.Parameter) (*models.Parameter, error) {
 	return data, err
 }
 
-func (a *mgoParams) Delete(code string) {}
+func (a *mgoParams) Delete(code string) error {
+	_, err := a.CRUD.DeleteOne(bson.M{"code": code})
+	return err
+}
 
 func (a *mgoParams) IsExist(code string) bool {
 	return a.CRUD.Count(bson.M{"code": code}) != 0

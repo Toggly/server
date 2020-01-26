@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -42,6 +43,8 @@ func (a *ParamEndpoints) Routes() chi.Router {
 		r.Delete("/{ParamCode}", a.delete)
 
 		r.Post("/{ParamCode}/assign", a.override)
+
+		r.Get("/validateCode", a.validateCode)
 	})
 	return router
 }
@@ -83,7 +86,8 @@ func (a *ParamEndpoints) withProjectService(r *http.Request) *service.Project {
 
 func (a *ParamEndpoints) list(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
-	recs := a.withParamService(r).List()
+	q := r.URL.Query().Get("q")
+	recs := a.withParamService(r).List(q)
 	log.Debugf("Param.list: %d items found", len(recs))
 	models.JSONResponse(w, r, recs)
 }
@@ -154,7 +158,7 @@ func (a *ParamEndpoints) update(w http.ResponseWriter, r *http.Request) {
 	log := GetLogger(r)
 	code := chi.URLParam(r, "ParamCode")
 
-	// verify param existance
+	// verify param existence
 	if ok := a.withParamService(r).IsExist(code); !ok {
 		models.NotFoundResponse(w, r, fmt.Sprintf("Param with code [%s] is not found", code))
 		return
@@ -190,8 +194,51 @@ func (a *ParamEndpoints) update(w http.ResponseWriter, r *http.Request) {
 	models.JSONResponse(w, r, resp)
 }
 
+func (a *ParamEndpoints) validateCode(w http.ResponseWriter, r *http.Request) {
+	log := GetLogger(r)
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		log.Errorf("Code [%s] is not defined", code)
+		models.ErrorResponseWithStatus(w, r, errors.New("Code is not defined"), http.StatusBadRequest)
+		return
+	}
+
+	// update params desc and values
+	if ok := a.withParamService(r).IsExist(code); ok {
+		log.Warningf("Code [%s] is exist", code)
+		models.ErrorResponseWithStatus(w, r, errors.New("Code is exist"), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (a *ParamEndpoints) delete(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusForbidden)
+	log := GetLogger(r)
+	code := chi.URLParam(r, "ParamCode")
+	if code == "" {
+		log.Errorf("Code [%s] is not defined", code)
+		models.ErrorResponseWithStatus(w, r, errors.New("Code is not defined"), http.StatusBadRequest)
+		return
+	}
+
+	// check parameter existance
+	if ok := a.withParamService(r).IsExist(code); !ok {
+		log.Warningf("Code [%s] is not exist", code)
+		models.ErrorResponseWithStatus(w, r, errors.New("Code is not exist"), http.StatusBadRequest)
+		return
+	}
+
+	// todo add check for parameter inheritance
+
+	// delete parameter
+	if err := a.withParamService(r).Delete(code); err != nil {
+		log.Error(err.Error())
+		models.ErrorResponseWithStatus(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (a *ParamEndpoints) getParamValue(w http.ResponseWriter, r *http.Request) {

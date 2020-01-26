@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"bitbucket.org/toggly/toggly-server/models"
 	"bitbucket.org/toggly/toggly-server/storage"
@@ -30,14 +31,22 @@ func (a *Param) Get(code string) (*models.Parameter, error) {
 	return a.Storage.ParamCRUD(a.Project.ID).Get(code)
 }
 
+// Delete param by code
+func (a *Param) Delete(code string) error {
+	return a.Storage.ParamCRUD(a.Project.ID).Delete(code)
+}
+
 // List project by code
-func (a *Param) List() []*models.Parameter {
+func (a *Param) List(q string) []*models.Parameter {
 	a.Logger.Debugf("Param.List for project [%s]", a.Project.Code)
-	return a.Storage.ParamCRUD(a.Project.ID).List()
+	return a.Storage.ParamCRUD(a.Project.ID).List(q)
 }
 
 // Create param
 func (a *Param) Create(data models.Parameter) (*models.Parameter, error) {
+
+	a.Logger.Debugf("Param.Create: %+v", data)
+
 	if data.Code == "" {
 		return nil, models.ErrBadRequest("Code is empty")
 	}
@@ -48,18 +57,19 @@ func (a *Param) Create(data models.Parameter) (*models.Parameter, error) {
 		return nil, models.ErrBadRequest("Value is empty")
 	}
 
-	if models.IsCodeValid(data.Code) {
+	if !models.IsCodeValid(data.Code) {
 		return nil, models.ErrBadRequest("Code is invalid")
 	}
 
 	if data.Type != models.ParameterTypeBool &&
 		data.Type != models.ParameterTypeFloat &&
 		data.Type != models.ParameterTypeInt &&
-		data.Type != models.ParameterTypeString {
+		data.Type != models.ParameterTypeString &&
+		data.Type != models.ParameterTypeEnum {
 		return nil, models.ErrBadRequest("Type is invalid")
 	}
 
-	a.Logger.Debugf("Param.Create: %+v", data)
+	data.Updated = time.Now()
 
 	resp, err := a.Storage.ParamCRUD(a.Project.ID).Create(&data)
 	if err != nil {
@@ -80,7 +90,7 @@ func (a *Param) Update(data models.Parameter) (*models.Parameter, error) {
 
 	// revalue existing data
 	item.Value = data.Value
-	item.AllowedValues = data.AllowedValues
+	// item.AllowedValues = data.AllowedValues
 	item.Description = data.Description
 
 	resp, err := a.Storage.ParamCRUD(a.Project.ID).Update(item)

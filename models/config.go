@@ -53,6 +53,6 @@ func OwnerFromContext(r *http.Request) string {
 
 // IsCodeValid returns true if code has valid value
 func IsCodeValid(code string) bool {
-	res, _ := regexp.Match(`^([a-z0-9\-_]+)$`, []byte(code))
+	res, _ := regexp.Match(`^([a-z0-9\-]+)$`, []byte(code))
 	return res
 }

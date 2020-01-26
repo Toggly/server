@@ -18,11 +18,11 @@ type Project interface {
 
 // Parameter interface
 type Parameter interface {
-	List() []*models.Parameter
+	List(q string) []*models.Parameter
 	Get(code string) (*models.Parameter, error)
 	Create(data *models.Parameter) (*models.Parameter, error)
 	Update(data *models.Parameter) (*models.Parameter, error)
-	Delete(code string)
+	Delete(code string) error
 
 	IsExist(code string) bool
 }
