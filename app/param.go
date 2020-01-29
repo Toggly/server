@@ -39,6 +39,7 @@ func (a *ParamEndpoints) Routes() chi.Router {
 		r.Use(WithProjectCtx(a.Services["project"].(*service.Project)))
 		r.Get("/", a.list)
 		r.Post("/", a.create)
+		r.Get("/{ParamCode}", a.get)
 		r.Put("/{ParamCode}", a.update)
 		r.Delete("/{ParamCode}", a.delete)
 
@@ -90,6 +91,20 @@ func (a *ParamEndpoints) list(w http.ResponseWriter, r *http.Request) {
 	recs := a.withParamService(r).List(q)
 	log.Debugf("Param.list: %d items found", len(recs))
 	models.JSONResponse(w, r, recs)
+}
+
+func (a *ParamEndpoints) get(w http.ResponseWriter, r *http.Request) {
+	log := GetLogger(r)
+	code := chi.URLParam(r, "ParamCode")
+
+	res, err := a.withParamService(r).Get(code)
+	if err != nil {
+		log.Error(err.Error())
+		models.ErrorResponseWithStatus(w, r, err, http.StatusNotFound)
+		return
+	}
+
+	models.JSONResponse(w, r, res)
 }
 
 func (a *ParamEndpoints) create(w http.ResponseWriter, r *http.Request) {
