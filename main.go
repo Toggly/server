@@ -51,7 +51,7 @@ func main() {
 		cancel()
 	}()
 
-	config := loadConfigs(os.Getenv("APP_CONFIG_PATH"))
+	config := loadConfigs()
 
 	// connects to session storage
 	mgoStore, err := mongo.NewMongoStore(&mongo.Options{
@@ -94,8 +94,9 @@ func main() {
 	log.Info("Bye! 🖐")
 }
 
-func loadConfigs(cfgPath string) *models.Config {
-	confContent, err := ioutil.ReadFile(cfgPath)
+func loadConfigs() *models.Config {
+	models.SetConfigDefaults()
+	confContent, err := ioutil.ReadFile(os.Getenv(models.EnvConfigPath))
 	if err != nil {
 		panic(err)
 	}

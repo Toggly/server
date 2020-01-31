@@ -7,13 +7,14 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/render v1.0.1
 	github.com/gofrs/uuid v3.2.0+incompatible
+	github.com/google/uuid v1.1.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nodely/go-mongo-store v0.0.0-20190711040119-fdd3ab9341a5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/rs/zerolog v1.14.3
-	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/satori/go.uuid v1.2.0
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/tidwall/btree v0.0.0-20170113224114-9876f1454cf0 // indirect
 	github.com/tidwall/buntdb v1.1.0 // indirect

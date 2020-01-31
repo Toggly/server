@@ -2,7 +2,10 @@ package models
 
 import (
 	"net/http"
+	"os"
 	"regexp"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // Config struct
@@ -32,6 +35,16 @@ const (
 	ContextAuthMockKey contextKey = iota
 	//XRequestID key
 	XRequestID = "X-Request-Id"
+	//EnvPort key
+	EnvPort = "PORT"
+	//EnvSessKey key
+	EnvSessKey = "SESSIONS_KEY"
+	//EnvDbName key
+	EnvDbName = "DB_NAME"
+	//EnvDbConnection key
+	EnvDbConnection = "DB_CONNECTION"
+	//EnvConfigPath key
+	EnvConfigPath = "APP_CONFIG_PATH"
 )
 
 const (
@@ -55,4 +68,23 @@ func OwnerFromContext(r *http.Request) string {
 func IsCodeValid(code string) bool {
 	res, _ := regexp.Match(`^([a-z0-9\-]+)$`, []byte(code))
 	return res
+}
+
+// SetConfigDefaults sets defaults for config env variables
+func SetConfigDefaults() {
+	if os.Getenv(EnvConfigPath) == "" {
+		os.Setenv(EnvConfigPath, "./configs/application.yml")
+	}
+	if os.Getenv(EnvPort) == "" {
+		os.Setenv(EnvPort, "8080")
+	}
+	if os.Getenv(EnvSessKey) == "" {
+		os.Setenv(EnvSessKey, uuid.Must(uuid.NewV4(), nil).String())
+	}
+	if os.Getenv(EnvDbName) == "" {
+		os.Setenv(EnvDbName, "toggly")
+	}
+	if os.Getenv(EnvDbConnection) == "" {
+		os.Setenv(EnvDbConnection, "mongodb://localhost")
+	}
 }
